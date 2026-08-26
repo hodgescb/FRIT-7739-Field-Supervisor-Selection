@@ -416,7 +416,7 @@
 
   // ---------- State ----------
   var current = "intro";
-  var history = [];
+  var navHistory = [];
 
   var mainArea = document.getElementById("mainArea");
   var backBtn = document.getElementById("backBtn");
@@ -431,14 +431,14 @@
       var state = JSON.parse(savedSuspend);
       if (state && state.current && screens[state.current]) {
         current = state.current;
-        history = state.history || [];
+        navHistory = state.history || [];
         resumed = true;
       }
     } catch (e) { /* ignore malformed suspend_data */ }
   }
 
   function saveState() {
-    var state = { current: current, history: history };
+    var state = { current: current, history: navHistory };
     scormSetValue("cmi.suspend_data", JSON.stringify(state));
     scormSetValue("cmi.core.lesson_location", current);
     scormCommit();
@@ -521,28 +521,28 @@
       markCompleted();
     }
 
-    stepLabel.textContent = "Step " + (history.length + 1);
-    backBtn.style.visibility = history.length === 0 ? "hidden" : "visible";
+    stepLabel.textContent = "Step " + (navHistory.length + 1);
+    backBtn.style.visibility = navHistory.length === 0 ? "hidden" : "visible";
     updateGuide(current);
     h2.focus();
     saveState();
   }
 
   function goTo(nextId) {
-    history.push(current);
+    navHistory.push(current);
     current = nextId;
     render();
   }
 
   function goBack() {
-    if (history.length > 0) {
-      current = history.pop();
+    if (navHistory.length > 0) {
+      current = navHistory.pop();
       render();
     }
   }
 
   function restart() {
-    history = [];
+    navHistory = [];
     current = "intro";
     render();
   }
