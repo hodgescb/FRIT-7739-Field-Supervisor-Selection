@@ -119,8 +119,10 @@
   .outcome-box.tone-good { background: var(--gold-tint); border-color: var(--accessible-gold); }
   .outcome-box.tone-bad { background: var(--grey-tint); border-color: var(--athletic-grey); }
   .outcome-box.tone-caution { background: var(--navy-tint); border-color: var(--navy); }
-  .outcome-box p:first-child { margin-top: 0; }
-  .outcome-box p:last-child { margin-bottom: 0; }
+  .outcome-box > *:first-child { margin-top: 0; }
+  .outcome-box > *:last-child { margin-bottom: 0; }
+  .outcome-box > div { margin: 0 0 14px; line-height: 1.55; }
+  .outcome-box .req-list { margin: 0 0 14px; }
   button {
     font-size: 1em;
     padding: 10px 20px;
@@ -308,7 +310,8 @@
       heading: "Looks Eligible",
       body: [
         "Based on what you've entered, your supervisor meets both core requirements: at least 3 years of experience in a T/L/S role, and a renewable Professional Certificate in your specific content area.",
-        "<strong>Next step:</strong> Let your program know who your supervisor is so their Certificate ID (and Clearance Certificate ID, if applicable) and your Clinical Practice beginning date can be entered into TPMS or NTRS by the required deadline. This part is handled by your EPP, not by this checker.",
+        "<strong>Next step:</strong> Send your instructor the following information about your supervisor so it can be submitted to TPMS or NTRS by the required deadline:",
+        "<ul class=\"req-list\"><li>Supervisor's first and last name</li><li>School district</li><li>Work email address</li><li>Certificate ID (and Clearance Certificate ID, if applicable)</li></ul>",
         "This is a self-check, not a final approval \u2014 your program will still confirm this as part of the placement process."
       ]
     },
@@ -319,7 +322,8 @@
       heading: "Looks Eligible \u2014 Permit Pathway",
       body: [
         "Because a supervisor with direct content-area certification wasn't available, the Permit exception applies here: your supervisor has 3+ years of experience and holds a GaPSC Permit in your content area.",
-        "<strong>Next step:</strong> Let your program know who your supervisor is so the required credential information and your Clinical Practice beginning date can be entered into TPMS or NTRS by the deadline.",
+        "<strong>Next step:</strong> Send your instructor the following information about your supervisor so it can be submitted to TPMS or NTRS by the required deadline:",
+        "<ul class=\"req-list\"><li>Supervisor's first and last name</li><li>School district</li><li>Work email address</li><li>Certificate ID (and Clearance Certificate ID, if applicable)</li></ul>",
         "This is a self-check, not a final approval \u2014 your program will still confirm this as part of the placement process."
       ]
     },
@@ -330,7 +334,8 @@
       heading: "Possibly Eligible \u2014 Confirm the Related-Field Pairing",
       body: [
         "The related-field exception may apply here, but this checker can't verify on its own whether your supervisor's specific certification field is listed as \"related\" in Appendix C of the GaPSC guidance document.",
-        "<strong>Next step:</strong> Before treating this as settled, confirm the specific field pairing with your program advisor or instructor.",
+        "<strong>Next step:</strong> Confirm the specific field pairing with your program advisor or instructor first. Once confirmed, send your instructor the following information about your supervisor so it can be submitted to TPMS or NTRS by the required deadline:",
+        "<ul class=\"req-list\"><li>Supervisor's first and last name</li><li>School district</li><li>Work email address</li><li>Certificate ID (and Clearance Certificate ID, if applicable)</li></ul>",
         "This is a self-check, not a final approval."
       ]
     },
@@ -513,9 +518,9 @@
       box.className = "outcome-box tone-" + s.tone;
       box.setAttribute("role", "status");
       s.body.forEach(function (t) {
-        var p = document.createElement("p");
-        p.innerHTML = t;
-        box.appendChild(p);
+        var el = document.createElement("div");
+        el.innerHTML = t;
+        box.appendChild(el);
       });
       mainArea.appendChild(box);
       markCompleted();
