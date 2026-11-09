@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>FRIT 7739: Field Supervisor Eligibility Checker</title>
+<script src="scormAPI.js"></script>
+<style>
+  :root {
+    --navy: #001344;
+    --white: #FFFFFF;
+    --logo-gold: #9A8348;
+    --accessible-gold: #B9832D;
+    --athletic-grey: #A5ACAF;
+    --grey-tint: #eef0f1;
+    --gold-tint: #faf3e8;
+    --navy-tint: #eaeef5;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, "Segoe UI", Arial, sans-serif;
+    background: var(--grey-tint);
+    margin: 0;
+    color: var(--navy);
+  }
+  #shell {
+    max-width: 780px;
+    margin: 0 auto;
+    min-height: 100vh;
+    background: var(--white);
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 0 24px rgba(0,0,0,0.08);
+    position: relative;
+  }
+  header {
+    background: var(--navy);
+    color: var(--white);
+    padding: 16px 28px;
+  }
+  header .kicker {
+    font-size: 0.78em;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--white);
+    opacity: 0.85;
+  }
+  header h1 {
+    margin: 4px 0 0;
+    font-size: 1.2em;
+    color: var(--white);
+  }
+  #disclaimer {
+    background: var(--grey-tint);
+    color: var(--navy);
+    font-size: 0.8em;
+    font-style: italic;
+    padding: 8px 28px;
+    border-bottom: 1px solid var(--athletic-grey);
+  }
+  #resumeNotice {
+    background: var(--gold-tint);
+    border-bottom: 3px solid var(--accessible-gold);
+    color: var(--navy);
+    padding: 10px 28px;
+    font-size: 0.9em;
+    display: none;
+  }
+  #stepLabel {
+    margin: 10px 28px 0;
+    font-size: 0.82em;
+    color: var(--athletic-grey);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  main {
+    flex: 1;
+    padding: 16px 32px 20px;
+  }
+  h2 { color: var(--navy); margin-top: 0; }
+  h2:focus { outline: none; }
+  p { line-height: 1.55; }
+  .prompt {
+    font-weight: 600;
+    background: var(--navy-tint);
+    padding: 14px 16px;
+    border-radius: 8px;
+    margin: 16px 0;
+  }
+  .subnote {
+    font-size: 0.88em;
+    color: var(--navy);
+    font-style: italic;
+  }
+  .choice-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 18px 0;
+  }
+  .choice-btn {
+    text-align: left;
+    background: var(--white);
+    border: 2px solid var(--navy);
+    color: var(--navy);
+    padding: 14px 16px;
+    border-radius: 8px;
+    font-size: 1em;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .choice-btn:hover { background: var(--navy-tint); }
+  .notice-box {
+    background: var(--gold-tint);
+    border: 2px solid var(--accessible-gold);
+    border-left-width: 8px;
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin: 0 0 20px;
+    line-height: 1.55;
+    color: var(--navy);
+  }
+  .notice-box strong.notice-title {
+    display: block;
+    margin-bottom: 4px;
+    font-size: 1.05em;
+  }
+  .outcome-box {
+    padding: 18px 20px;
+    border-radius: 8px;
+    border-left: 6px solid;
+    margin: 16px 0 20px;
+  }
+  .outcome-box.tone-good { background: var(--gold-tint); border-color: var(--accessible-gold); }
+  .outcome-box.tone-bad { background: var(--grey-tint); border-color: var(--athletic-grey); }
+  .outcome-box.tone-caution { background: var(--navy-tint); border-color: var(--navy); }
+  .outcome-box > *:first-child { margin-top: 0; }
+  .outcome-box > *:last-child { margin-bottom: 0; }
+  .outcome-box > div { margin: 0 0 14px; line-height: 1.55; }
+  .outcome-box .req-list { margin: 0 0 14px; }
+  button {
+    font-size: 1em;
+    padding: 10px 20px;
+    border-radius: 6px;
+    border: 2px solid transparent;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  button.primary { background: var(--navy); color: var(--white); }
+  button.secondary { background: var(--white); color: var(--navy); border-color: var(--navy); }
+  button:focus-visible, .choice-btn:focus-visible {
+    outline: 3px solid var(--accessible-gold);
+    outline-offset: 2px;
+  }
+  nav.controls {
+    display: flex;
+    justify-content: space-between;
+    padding: 14px 32px 24px;
+    border-top: 1px solid var(--grey-tint);
+    gap: 10px;
+  }
+  #guideWrap {
+    position: absolute;
+    bottom: 84px;
+    right: 20px;
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    pointer-events: none;
+    z-index: 5;
+  }
+  #guideBubble {
+    background: var(--white);
+    border: 2px solid var(--navy);
+    border-radius: 12px;
+    padding: 8px 12px;
+    font-size: 0.82em;
+    color: var(--navy);
+    max-width: 190px;
+    margin-bottom: 6px;
+    position: relative;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+  }
+  #guideBubble::after {
+    content: "";
+    position: absolute;
+    bottom: -9px;
+    right: 18px;
+    width: 0; height: 0;
+    border-left: 7px solid transparent;
+    border-right: 7px solid transparent;
+    border-top: 9px solid var(--navy);
+  }
+  #guideChar.animate { animation: guide-bounce 0.6s ease-out; }
+  @keyframes guide-bounce {
+    0% { transform: translateY(18px) scale(0.85); opacity: 0; }
+    60% { transform: translateY(-5px) scale(1.05); opacity: 1; }
+    100% { transform: translateY(0) scale(1); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    #guideChar.animate { animation: none; }
+  }
+  @media (max-width: 480px) {
+    #guideBubble { max-width: 130px; font-size: 0.75em; }
+    #guideChar svg { width: 52px; height: 52px; }
+  }
+</style>
+</head>
+<body>
+<div id="shell">
+  <header>
+    <div class="kicker">FRIT 7739 &middot; Practicum Placement</div>
+    <h1>Field Supervisor Eligibility Checker</h1>
+  </header>
+  <div id="disclaimer">This is a self-check tool based on GaPSC guidance shared with the program. It does not
+    replace confirmation from your program advisor or instructor before finalizing a placement.</div>
+  <div id="resumeNotice" role="status" aria-live="polite"></div>
+  <p id="stepLabel">Step 1</p>
+
+  <main id="mainArea"></main>
+
+  <nav class="controls">
+    <button class="secondary" id="backBtn" aria-label="Go back to the previous step">Back</button>
+    <button class="secondary" id="restartBtn">Start Over</button>
+  </nav>
+
+  <div id="guideWrap" aria-hidden="true">
+    <div id="guideBubble">Let's check your supervisor's eligibility.</div>
+    <div id="guideChar">
+      <svg viewBox="0 0 100 100" width="64" height="64" focusable="false">
+        <ellipse cx="50" cy="62" rx="28" ry="26" fill="var(--navy)"/>
+        <circle cx="48" cy="36" r="21" fill="var(--navy)"/>
+        <circle cx="41" cy="32" r="5" fill="var(--white)"/>
+        <circle cx="42" cy="32" r="2.2" fill="var(--navy)"/>
+        <polygon points="58,34 76,39 58,45" fill="var(--accessible-gold)"/>
+        <path d="M24,56 Q10,62 19,80 Q29,70 34,59 Z" fill="var(--accessible-gold)"/>
+      </svg>
+    </div>
+  </div>
+</div>
+
+<script>
+  scormInitialize();
+
+  var completedFlag = false;
+  var savedStatus = scormGetValue("cmi.core.lesson_status");
+  if (savedStatus === "" || savedStatus === "not attempted") {
+    scormSetValue("cmi.core.lesson_status", "incomplete");
+  }
+  completedFlag = (savedStatus === "completed" || savedStatus === "passed");
+
+  // ---------- Screen data ----------
+  var screens = {
+
+    intro: {
+      type: "info",
+      heading: "Before You Choose a Field Supervisor",
+      notice: "<strong class=\"notice-title\">Important \u2014 please read first</strong> If you are not working in the school system where you will complete your field experience, you must request a placement from your FRIT 7739 instructor. This eligibility checker does not apply to you.",
+      body: [
+        "GaPSC has specific requirements for who can serve as your ITEC B/P-12 field supervisor during your residency or internship — generally, certification in Instructional Technology, School Librarian, or Computer Science, or (as an exception) an Educational Leadership Tier I/II certificate. The supervisor also needs at least three years of experience in the certification area that qualifies them for the role.",
+        "This short checker first works out which certification pathway applies to the supervisor you're considering, then asks about their experience in that specific area. Answer based on what you currently know. If you're not sure about something, say so — guessing could lead to a placement that doesn't meet requirements."
+      ],
+      buttonLabel: "Begin",
+      next: "q_employed"
+    },
+
+    q_employed: {
+      type: "question",
+      heading: "Your Placement Situation",
+      prompt: "Are you currently working in the school system where you will complete your field experience?",
+      subnote: "If you are not, this checker does not apply to you. You will be directed to request a placement from your instructor.",
+      options: [
+        { label: "Yes", next: "q_ga_school" },
+        { label: "No", next: "out_request_placement" }
+      ]
+    },
+
+    q_ga_school: {
+      type: "question",
+      heading: "Placement Setting",
+      prompt: "Is this residency or internship being completed at a Georgia school that requires GaPSC certification?",
+      options: [
+        { label: "Yes", next: "q_content_cert" },
+        { label: "No / Not sure", next: "out_contact_program_setting" }
+      ]
+    },
+
+    q_content_cert: {
+      type: "question",
+      heading: "Content-Area Certification",
+      prompt: "Does your desired supervisor currently hold a renewable Professional Certificate in one of these areas: Instructional Technology, School Librarian, or Computer Science?",
+      subnote: "This is the standard requirement for ITEC placements. The next two questions only matter if the answer here is \"No.\"",
+      options: [
+        { label: "Yes", next: "q_exp_direct" },
+        { label: "No", next: "q_permit" },
+        { label: "I'm not sure", next: "out_verify_cert" }
+      ]
+    },
+
+    q_exp_direct: {
+      type: "question",
+      heading: "Experience in Your Supervisor's Certification Area",
+      prompt: "Does your desired supervisor have at least 3 years of professional experience in the area of that certification (Instructional Technology, School Librarian, or Computer Science)?",
+      subnote: "Count experience in the certification area itself. Years working in schools in other roles don't count toward this requirement.",
+      options: [
+        { label: "Yes", next: "out_eligible_direct" },
+        { label: "No", next: "out_not_eligible_experience" },
+        { label: "I'm not sure", next: "out_verify_experience" }
+      ]
+    },
+
+    q_permit: {
+      type: "question",
+      heading: "Exception 1: GaPSC Permit",
+      prompt: "Since a directly certified supervisor isn't available in this case, here's the first exception: does your desired supervisor hold a GaPSC Permit in Instructional Technology, School Librarian, or Computer Science?",
+      options: [
+        { label: "Yes", next: "q_exp_permit" },
+        { label: "No", next: "q_related" },
+        { label: "I'm not sure", next: "out_verify_permit" }
+      ]
+    },
+
+    q_exp_permit: {
+      type: "question",
+      heading: "Experience in Your Supervisor's Permit Area",
+      prompt: "Does your desired supervisor have at least 3 years of professional experience in the area of that Permit (Instructional Technology, School Librarian, or Computer Science)?",
+      subnote: "Count experience in the permit area itself. Years working in schools in other roles don't count toward this requirement.",
+      options: [
+        { label: "Yes", next: "out_eligible_permit" },
+        { label: "No", next: "out_not_eligible_experience" },
+        { label: "I'm not sure", next: "out_verify_experience" }
+      ]
+    },
+
+    q_related: {
+      type: "question",
+      heading: "Exception 2: Educational Leadership Certificate",
+      prompt: "Here's the second exception, specific to ITEC placements: does your desired supervisor hold an Educational Leadership Tier I or Tier II certificate?",
+      subnote: "This is the specific related-field certification GaPSC accepts for Instructional Technology candidates.",
+      options: [
+        { label: "Yes", next: "q_exp_related" },
+        { label: "No", next: "out_not_eligible_no_path" },
+        { label: "I'm not sure", next: "out_verify_related" }
+      ]
+    },
+
+    q_exp_related: {
+      type: "question",
+      heading: "Experience in Educational Leadership",
+      prompt: "Does your desired supervisor have at least 3 years of professional experience in Educational Leadership (the area of that certificate)?",
+      subnote: "Count experience in educational leadership roles. Years working in schools in other roles, such as classroom teaching, don't count toward this requirement.",
+      options: [
+        { label: "Yes", next: "out_eligible_related" },
+        { label: "No", next: "out_not_eligible_experience" },
+        { label: "I'm not sure", next: "out_verify_experience" }
+      ]
+    },
+
+    // ---------- Outcomes ----------
+    out_eligible_direct: {
+      type: "outcome",
+      tone: "good",
+      heading: "Looks Eligible",
+      body: [
+        "Based on what you've entered, your supervisor meets both core requirements: a renewable Professional Certificate in Instructional Technology, School Librarian, or Computer Science, and at least 3 years of professional experience in that certification area.",
+        "<strong>Next step:</strong> Send your instructor the following information about your supervisor so it can be submitted to TPMS or NTRS by the required deadline. The Certificate ID must be valid and available for GaPSC verification, since it becomes part of your official recommendation documentation:",
+        "<ul class=\"req-list\"><li>Supervisor's first and last name</li><li>School district</li><li>Work email address</li><li>Certificate ID (and Clearance Certificate ID, if applicable)</li></ul>",
+        "This is a self-check, not a final approval \u2014 your program will still confirm this as part of the placement process."
+      ]
+    },
+
+    out_eligible_permit: {
+      type: "outcome",
+      tone: "good",
+      heading: "Looks Eligible — Permit Pathway",
+      body: [
+        "Because a supervisor with direct content-area certification wasn't available, the Permit exception applies here: your supervisor holds a GaPSC Permit in Instructional Technology, School Librarian, or Computer Science and has at least 3 years of professional experience in that area.",
+        "<strong>Next step:</strong> Send your instructor the following information about your supervisor so it can be submitted to TPMS or NTRS by the required deadline. The Certificate ID must be valid and available for GaPSC verification, since it becomes part of your official recommendation documentation:",
+        "<ul class=\"req-list\"><li>Supervisor's first and last name</li><li>School district</li><li>Work email address</li><li>Certificate ID (and Clearance Certificate ID, if applicable)</li></ul>",
+        "This is a self-check, not a final approval \u2014 your program will still confirm this as part of the placement process."
+      ]
+    },
+
+    out_eligible_related: {
+      type: "outcome",
+      tone: "good",
+      heading: "Looks Eligible — Educational Leadership Pathway",
+      body: [
+        "Because a supervisor certified in Instructional Technology, School Librarian, or Computer Science wasn't available, the Educational Leadership exception applies here: your supervisor holds a Tier I or Tier II Educational Leadership certificate and has at least 3 years of professional experience in Educational Leadership.",
+        "<strong>Next step:</strong> Send your instructor the following information about your supervisor so it can be submitted to TPMS or NTRS by the required deadline. The Certificate ID must be valid and available for GaPSC verification, since it becomes part of your official recommendation documentation:",
+        "<ul class=\"req-list\"><li>Supervisor's first and last name</li><li>School district</li><li>Work email address</li><li>Certificate ID (and Clearance Certificate ID, if applicable)</li></ul>",
+        "This is a self-check, not a final approval \u2014 your program will still confirm this as part of the placement process."
+      ]
+    },
+
+    out_not_eligible_experience: {
+      type: "outcome",
+      tone: "bad",
+      heading: "Not Currently Eligible — Experience Requirement",
+      body: [
+        "GaPSC requires your field supervisor to have at least 3 years of professional experience in the certification area that qualifies them for the role. Your supervisor may have many years of experience in schools, but based on what you've entered, they don't yet have 3 years in that specific certification area.",
+        "<strong>Next step:</strong> Talk with your program advisor or FRIT 7739 instructor about identifying a different supervisor for this placement, or about whether this supervisor's experience in the certification area can be verified differently."
+      ]
+    },
+
+    out_request_placement: {
+      type: "outcome",
+      tone: "caution",
+      heading: "Request a Placement From Your Instructor",
+      body: [
+        "Because you are not working in the school system where you will complete your field experience, this eligibility checker does not apply to you.",
+        "<strong>Next step:</strong> Request a placement from your FRIT 7739 instructor."
+      ]
+    },
+
+    out_not_eligible_no_path: {
+      type: "outcome",
+      tone: "bad",
+      heading: "No Current Pathway",
+      body: [
+        "Based on your answers, your desired supervisor doesn't hold a Professional Certificate in Instructional Technology, School Librarian, or Computer Science, doesn't hold a relevant GaPSC Permit, and doesn't hold an Educational Leadership Tier I or Tier II certificate.",
+        "<strong>Next step:</strong> Contact your program advisor or FRIT 7739 instructor to discuss alternative supervisor options before finalizing this placement."
+      ]
+    },
+
+    out_contact_program_setting: {
+      type: "outcome",
+      tone: "caution",
+      heading: "Check With Your Program",
+      body: [
+        "The guidance this checker is based on specifically addresses residencies/internships at Georgia schools that require GaPSC certification. Since that doesn't clearly describe your situation, this checker can't reliably walk you through the requirements.",
+        "<strong>Next step:</strong> Contact your program advisor or FRIT 7739 instructor to confirm what applies to your specific placement."
+      ]
+    },
+
+    out_verify_cert: {
+      type: "outcome",
+      tone: "caution",
+      heading: "Verify Before Proceeding",
+      body: [
+        "Whether your supervisor holds a renewable Professional Certificate in Instructional Technology, School Librarian, or Computer Science determines which path applies — it's worth confirming directly rather than guessing.",
+        "<strong>Next step:</strong> Ask your supervisor directly, or check with your program advisor, then come back and run through this checker again with a confirmed answer."
+      ]
+    },
+
+    out_verify_permit: {
+      type: "outcome",
+      tone: "caution",
+      heading: "Verify Before Proceeding",
+      body: [
+        "Whether your supervisor holds a GaPSC Permit in Instructional Technology, School Librarian, or Computer Science changes which pathway applies here.",
+        "<strong>Next step:</strong> Confirm this detail with your supervisor or your program advisor, then return and finish this checker with a confirmed answer."
+      ]
+    },
+
+    out_verify_related: {
+      type: "outcome",
+      tone: "caution",
+      heading: "Verify Before Proceeding",
+      body: [
+        "Whether your supervisor holds an Educational Leadership Tier I or Tier II certificate determines whether this exception applies.",
+        "<strong>Next step:</strong> Check with your supervisor or your program advisor to confirm the certificate tier, then return and finish this checker with a confirmed answer."
+      ]
+    },
+
+    out_verify_experience: {
+      type: "outcome",
+      tone: "caution",
+      heading: "Verify Before Proceeding",
+      body: [
+        "Your supervisor needs at least 3 years of professional experience in the specific certification area that qualifies them. Total years in schools isn't enough, so it's worth confirming this rather than guessing.",
+        "<strong>Next step:</strong> Ask your supervisor how long they have worked in that certification area, or check with your program advisor, then come back and run through this checker again with a confirmed answer."
+      ]
+    }
+  };
+
+  var guideMessages = {
+    intro: "Let's check your supervisor's eligibility.",
+    q_employed: "A quick screening question first.",
+    q_ga_school: "Now, the placement setting.",
+    q_content_cert: "This is the main requirement.",
+    q_exp_direct: "Now, time in that certification area.",
+    q_permit: "Checking the first exception.",
+    q_exp_permit: "Now, time in that permit area.",
+    q_related: "Checking the second exception.",
+    q_exp_related: "Now, time in leadership roles.",
+    out_eligible_direct: "Nice — looks like a solid match!",
+    out_eligible_permit: "Good — the permit pathway works.",
+    out_eligible_related: "Good — the leadership pathway works.",
+    out_not_eligible_experience: "Close, but the experience isn't there yet.",
+    out_not_eligible_no_path: "No pathway fits right now.",
+    out_request_placement: "Reach out to your instructor.",
+    out_contact_program_setting: "This needs a human check.",
+    out_verify_cert: "Worth double-checking this one.",
+    out_verify_permit: "Worth double-checking this one.",
+    out_verify_related: "Worth double-checking this one.",
+    out_verify_experience: "Worth double-checking the experience."
+  };
+
+  // ---------- State ----------
+  var current = "intro";
+  var navHistory = [];
+
+  var mainArea = document.getElementById("mainArea");
+  var backBtn = document.getElementById("backBtn");
+  var restartBtn = document.getElementById("restartBtn");
+  var stepLabel = document.getElementById("stepLabel");
+
+  // ---------- Resume ----------
+  var savedSuspend = scormGetValue("cmi.suspend_data");
+  var resumed = false;
+  if (savedSuspend) {
+    try {
+      var state = JSON.parse(savedSuspend);
+      if (state && state.current && screens[state.current]) {
+        current = state.current;
+        // Drop any saved steps that no longer exist (e.g., saved under an older version)
+        navHistory = (state.history || []).filter(function (id) { return !!screens[id]; });
+        resumed = true;
+      }
+    } catch (e) { /* ignore malformed suspend_data */ }
+  }
+
+  function saveState() {
+    var state = { current: current, history: navHistory };
+    scormSetValue("cmi.suspend_data", JSON.stringify(state));
+    scormSetValue("cmi.core.lesson_location", current);
+    scormCommit();
+  }
+
+  function updateGuide(id) {
+    var bubble = document.getElementById("guideBubble");
+    var charEl = document.getElementById("guideChar");
+    if (!bubble || !charEl) return;
+    bubble.textContent = guideMessages[id] || "";
+    charEl.classList.remove("animate");
+    void charEl.offsetWidth;
+    charEl.classList.add("animate");
+  }
+
+  function markCompleted() {
+    if (!completedFlag) {
+      completedFlag = true;
+      scormSetValue("cmi.core.lesson_status", "completed");
+      scormSetValue("cmi.core.exit", "");
+    }
+  }
+
+  function render() {
+    var s = screens[current];
+    mainArea.innerHTML = "";
+
+    var h2 = document.createElement("h2");
+    h2.tabIndex = -1;
+    h2.textContent = s.heading;
+    mainArea.appendChild(h2);
+
+    if (s.type === "info") {
+      if (s.notice) {
+        var note = document.createElement("div");
+        note.className = "notice-box";
+        note.setAttribute("role", "note");
+        note.innerHTML = s.notice;
+        mainArea.appendChild(note);
+      }
+      s.body.forEach(function (t) {
+        var p = document.createElement("p");
+        p.innerHTML = t;
+        mainArea.appendChild(p);
+      });
+      var beginBtn = document.createElement("button");
+      beginBtn.className = "primary";
+      beginBtn.textContent = s.buttonLabel || "Continue";
+      beginBtn.addEventListener("click", function () { goTo(s.next); });
+      mainArea.appendChild(beginBtn);
+
+    } else if (s.type === "question") {
+      var promptEl = document.createElement("p");
+      promptEl.className = "prompt";
+      promptEl.textContent = s.prompt;
+      mainArea.appendChild(promptEl);
+
+      if (s.subnote) {
+        var sub = document.createElement("p");
+        sub.className = "subnote";
+        sub.textContent = s.subnote;
+        mainArea.appendChild(sub);
+      }
+
+      var list = document.createElement("div");
+      list.className = "choice-list";
+      s.options.forEach(function (opt) {
+        var btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "choice-btn";
+        btn.textContent = opt.label;
+        btn.addEventListener("click", function () { goTo(opt.next); });
+        list.appendChild(btn);
+      });
+      mainArea.appendChild(list);
+
+    } else if (s.type === "outcome") {
+      var box = document.createElement("div");
+      box.className = "outcome-box tone-" + s.tone;
+      box.setAttribute("role", "status");
+      s.body.forEach(function (t) {
+        var el = document.createElement("div");
+        el.innerHTML = t;
+        box.appendChild(el);
+      });
+      mainArea.appendChild(box);
+      markCompleted();
+    }
+
+    stepLabel.textContent = "Step " + (navHistory.length + 1);
+    backBtn.style.visibility = navHistory.length === 0 ? "hidden" : "visible";
+    updateGuide(current);
+    h2.focus();
+    saveState();
+  }
+
+  function goTo(nextId) {
+    navHistory.push(current);
+    current = nextId;
+    render();
+  }
+
+  function goBack() {
+    if (navHistory.length > 0) {
+      current = navHistory.pop();
+      render();
+    }
+  }
+
+  function restart() {
+    navHistory = [];
+    current = "intro";
+    render();
+  }
+
+  backBtn.addEventListener("click", goBack);
+  restartBtn.addEventListener("click", restart);
+
+  window.addEventListener("beforeunload", function () {
+    scormSetValue("cmi.core.exit", completedFlag ? "" : "suspend");
+    saveState();
+  });
+
+  if (resumed) {
+    var notice = document.getElementById("resumeNotice");
+    notice.textContent = "Welcome back \u2014 resuming where you left off.";
+    notice.style.display = "block";
+  }
+
+  render();
+</script>
+</body>
+</html>
